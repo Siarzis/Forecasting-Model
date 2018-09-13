@@ -4,6 +4,7 @@
 
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import os
 
 # --------------------------------------------  Wind Data Fix  ------------------------------------------------------
@@ -21,12 +22,14 @@ for k in range(0, 5):
     consecutive_speed_intervals = farm_id.reset_index().groupby(['WindSpeed', 'block1'])['index'].apply(np.array)
     consecutive_direction_intervals = farm_id.reset_index().groupby(['WindDirection', 'block2'])['index'].apply(np.array)
 
+    farm_id_old = farm_id.copy()
+
     # consecutive_intervals variables break into tuple and list with proper values
     # for iteration and accessing reasons
     for speed_block_tuple, indexes in consecutive_speed_intervals.items():
         indexes = indexes.tolist()  # turn array to list
         # if measurements give the same value for 4  hours and above then they are not accepted
-        if len(indexes) > 3 and speed_block_tuple[0] != 0:
+        if len(indexes) > 5 and speed_block_tuple[0] != 0:
             for elem in indexes:
                 farm_id.at[elem, 'WindSpeed'] = float('nan')
         # contrary to previous one, if measurements are zero for 10 hours and above then they are not accepted
@@ -38,9 +41,11 @@ for k in range(0, 5):
     for dir_block_tuple, indexes in consecutive_direction_intervals.items():
         indexes = indexes.tolist()  # turn array to list
         # same pattern as above
-        if len(indexes) > 3:
+        if len(indexes) > 5:
             for elem in indexes:
                 farm_id.at[elem, 'WindDirection'] = float('nan')
+
+    # farm_id.drop(columns=['WindDirection', 'SetPoints', 'block1', 'block2'], inplace=True)
 
     filename = 'New Wind Info\WindFarm' + str(k+1) + '.csv'
     if os.path.exists(filename):
@@ -49,6 +54,11 @@ for k in range(0, 5):
         except OSError as e:
             print("Error: %s - %s." % (e.filename, e.strerror))
     farm_id.to_csv(filename)
+
+    farm_id['WindSpeed'] = farm_id['WindSpeed'].astype('float')
+    farm_id_old.WindSpeed.plot()
+    farm_id.WindSpeed.plot()
+    plt.show()
 
 # ----------------------------------------------  PV Data Fix  ------------------------------------------------------
 
@@ -62,10 +72,14 @@ pv_data.rename(columns={0: 'A'}, inplace=True)
 pv_data['block'] = (pv_data.A.shift(1) != pv_data.A).astype(int).cumsum()
 consecutive_pv_intervals = pv_data.reset_index().groupby(['A', 'block']).apply(np.array)
 
-for i, v in consecutive_pv_intervals.items():
-    v = v.tolist()  # turn array to list
-    # our code also prints the ids of values that appeared only once. Here we eliminate those ids
-    if len(v) > 1:
-        pass
-        #print('Wrong PV Value:', i[0], '| Block:', i[1], '--> Interval:', v[::len(v) - 1])
-        #print(v[0][0], v[0][1], v[-1][0], v[-1][1])
+for pv_block_tuple, indexes in consecutive_pv_intervals.items():
+    indexes = indexes.tolist()  # turn array to list
+    print(indexes)
+    if len(indexes) > 5 and pv_block_tuple[0] >= 0.5:
+        for elem in indexes:
+            pv_data.at[(elem[0], elem[1]), 'A'] = float('nan')
+    if len(indexes) > 12 and pv_block_tuple[0] <= 0.5:
+        for elem in indexes:
+            pv_data.at[(elem[0], elem[1]), 'A'] = float('nan')
+
+print(pv_data.loc['13/11/13 ', '12'])

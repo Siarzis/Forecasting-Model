@@ -11,10 +11,12 @@ pv_data.rename(columns={0: 'A'}, inplace=True)
 pv_data['block'] = (pv_data.A.shift(1) != pv_data.A).astype(int).cumsum()
 consecutive_pv_intervals = pv_data.reset_index().groupby(['A', 'block']).apply(np.array)
 
-for i, v in consecutive_pv_intervals.items():
-    v = v.tolist()  # turn array to list
-    # our code also prints the ids of values that appeared only once. Here we eliminate those ids
-    if len(v) > 1:
-        pass
-        #print('Wrong PV Value:', i[0], '| Block:', i[1], '--> Interval:', v[::len(v) - 1])
-        #print(v[0][0], v[0][1], v[-1][0], v[-1][1])
+for pv_block_tuple, indexes in consecutive_pv_intervals.items():
+    indexes = indexes.tolist()  # turn array to list
+    print(indexes)
+    if len(indexes) > 5 and pv_block_tuple[0] >= 0.5:
+        for elem in indexes:
+            pv_data.at[(elem[0], elem[1]), 'A'] = float('nan')
+    if len(indexes) > 12 and pv_block_tuple[0] <= 0.5:
+        for elem in indexes:
+            pv_data.at[(elem[0], elem[1]), 'A'] = float('nan')
