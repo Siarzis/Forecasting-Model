@@ -4,6 +4,7 @@
 
 import pandas as pd
 import numpy as np
+import os
 
 # --------------------------------------------  Wind Data Fix  ------------------------------------------------------
 
@@ -13,28 +14,41 @@ for k in range(0, 5):
     # complex, one-line commands that do all the work. Unfortunately this is the way pandas do the job
     # found after search on StackOverflow
     # 'block' term is introduced in order to distinguish the different intervals that
-    # a value can be continuously same
+    # the same value can be continuously repeated
     farm_id['block1'] = (farm_id.WindSpeed.shift(1) != farm_id.WindSpeed).astype(int).cumsum()
     farm_id['block2'] = (farm_id.WindDirection.shift(1) != farm_id.WindDirection).astype(int).cumsum()
     # consecutive_intervals is a pandas Series that contain all intervals of interest
     consecutive_speed_intervals = farm_id.reset_index().groupby(['WindSpeed', 'block1'])['index'].apply(np.array)
     consecutive_direction_intervals = farm_id.reset_index().groupby(['WindDirection', 'block2'])['index'].apply(np.array)
 
-    print(consecutive_speed_intervals)
+    # consecutive_intervals variables break into tuple and list with proper values
+    # for iteration and accessing reasons
+    for speed_block_tuple, indexes in consecutive_speed_intervals.items():
+        indexes = indexes.tolist()  # turn array to list
+        # if measurements give the same value for 4  hours and above then they are not accepted
+        if len(indexes) > 3 and speed_block_tuple[0] != 0:
+            for elem in indexes:
+                farm_id.at[elem, 'WindSpeed'] = float('nan')
+        # contrary to previous one, if measurements are zero for 10 hours and above then they are not accepted
+        # this is reasonable because no windy conditions may occur
+        if len(indexes) > 9 and speed_block_tuple[0] == 0:
+            for elem in indexes:
+                farm_id.at[elem, 'WindSpeed'] = float('nan')
 
-    for i, v in consecutive_speed_intervals.items():
-        v = v.tolist()  # turn array to list
-        # our code also prints the ids of values that appeared only once. Here we eliminate those ids
-        if len(v) > 1:
-            pass
-            #print('Farm:', k+1, '| Wrong Speed Value:', i[0], '| Block:', i[1], '--> Interval:', v[::len(v) - 1])
+    for dir_block_tuple, indexes in consecutive_direction_intervals.items():
+        indexes = indexes.tolist()  # turn array to list
+        # same pattern as above
+        if len(indexes) > 3:
+            for elem in indexes:
+                farm_id.at[elem, 'WindDirection'] = float('nan')
 
-    for i, v in consecutive_direction_intervals.items():
-        v = v.tolist()  # turn array to list
-        # our code also prints the ids of values that appeared only once. Here we eliminate those ids
-        if len(v) > 1:
-            pass
-            #print('Farm:', k+1, '| Wrong Direction Value:', i[0], '| Block:', i[1], '--> Interval:', v[::len(v) - 1])
+    filename = 'New Wind Info\WindFarm' + str(k+1) + '.csv'
+    if os.path.exists(filename):
+        try:
+            os.remove(filename)
+        except OSError as e:
+            print("Error: %s - %s." % (e.filename, e.strerror))
+    farm_id.to_csv(filename)
 
 # ----------------------------------------------  PV Data Fix  ------------------------------------------------------
 
