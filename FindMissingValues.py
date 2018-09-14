@@ -55,11 +55,6 @@ for k in range(0, 5):
             print("Error: %s - %s." % (e.filename, e.strerror))
     farm_id.to_csv(filename)
 
-    farm_id['WindSpeed'] = farm_id['WindSpeed'].astype('float')
-    farm_id_old.WindSpeed.plot()
-    farm_id.WindSpeed.plot()
-    plt.show()
-
 # ----------------------------------------------  PV Data Fix  ------------------------------------------------------
 
 pv_data = pd.read_csv('PV Info\PvData.csv', index_col='Dates')
@@ -72,6 +67,8 @@ pv_data.rename(columns={0: 'A'}, inplace=True)
 pv_data['block'] = (pv_data.A.shift(1) != pv_data.A).astype(int).cumsum()
 consecutive_pv_intervals = pv_data.reset_index().groupby(['A', 'block']).apply(np.array)
 
+pv_data_old = pv_data.copy()
+
 for pv_block_tuple, indexes in consecutive_pv_intervals.items():
     indexes = indexes.tolist()  # turn array to list
     print(indexes)
@@ -83,3 +80,8 @@ for pv_block_tuple, indexes in consecutive_pv_intervals.items():
             pv_data.at[(elem[0], elem[1]), 'A'] = float('nan')
 
 print(pv_data.loc['13/11/13 ', '12'])
+
+pv_data.A = pv_data.A.astype('float')
+pv_data_old.A.plot()
+pv_data.A.plot()
+plt.show()
