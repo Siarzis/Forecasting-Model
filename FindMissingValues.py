@@ -63,7 +63,7 @@ pv_data.columns.name = 'Hours'  # add a proper name to .csv 's columns
 # we need a proper way to turn the 2D DataFrame to a 1D Series to find consecutive intervals
 pv_data = pv_data.stack().to_frame()
 
-pv_data.rename(columns={0: 'A'}, inplace=True)
+pv_data.rename(columns={0: 'PvPower'}, inplace=True)
 pv_data['block'] = (pv_data.A.shift(1) != pv_data.A).astype(int).cumsum()
 consecutive_pv_intervals = pv_data.reset_index().groupby(['A', 'block']).apply(np.array)
 
