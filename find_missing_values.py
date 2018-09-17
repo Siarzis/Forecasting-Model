@@ -1,4 +1,3 @@
-import re
 import os
 import pandas as pd
 import numpy as np
@@ -8,8 +7,8 @@ import matplotlib.pyplot as plt
 def find_missing_values(input_series, gen_threshold, speed_threshold, pv_threshold, attribute):
 
     # input_series contains historical weather data (wind speed/wind direction, etc)
-    df = input_series.to_frame()
-    df.columns = [attribute[1]]
+    df = input_series.to_frame()  # turn series to frame to facilitate processing
+    df.columns = [attribute[1]]  # rename column; problem in transition from series to df
 
     # complex, one-line commands that do all the work. Unfortunately this is the way pandas do the job
     # found after search on StackOverflow
@@ -27,28 +26,31 @@ def find_missing_values(input_series, gen_threshold, speed_threshold, pv_thresho
     # for iteration and accessing reasons
     for value_block_tuple, indexes in consecutive_intervals.items():
         indexes = indexes.tolist()  # turn array to list
-        # if measurements give the same value for 4  hours and above then they are not accepted
+        # below if-statements are used to cover every case of wrong measurements based on weather elements
         if pv_threshold != float('inf'):
+            # in pv case value needs to be over 0.5 because of night
             if len(indexes) > gen_threshold and value_block_tuple[0] > 0.5:
                 for elem in indexes:
                     df.at[elem, attribute[1]] = float('nan')
         else:
+            # general threshold that appears in all cases
             if len(indexes) > gen_threshold and value_block_tuple[0] != 0:
                 for elem in indexes:
                     df.at[elem, attribute[1]] = float('nan')
-        # contrary to previous one, if measurements are zero for 10 hours and above, then they are not accepted
-        # this is reasonable because no windy conditions may occur
+        # speed my have the same value for 10 hours
         if len(indexes) > speed_threshold and value_block_tuple[0] == 0:
             for elem in indexes:
                 df.at[elem, attribute[1]] = float('nan')
+        # pv can have close to zero values for at least 12 hours because of night
         if len(indexes) > pv_threshold and value_block_tuple[0] <= 0.5:
             for elem in indexes:
                 df.at[elem, attribute[1]] = float('nan')
 
-    time_series = pd.Series(df[attribute[1]].values, index=df.index)
+    time_series = pd.Series(df[attribute[1]].values, index=df.index)  # turn df into series; mainly get the output
 
     initial_time_series.plot()
     time_series.plot()
+    plt.suptitle(attribute[1] + str(attribute[0]), fontsize=16)
     plt.show()
 
     if pv_threshold != float('inf'):
@@ -73,4 +75,4 @@ for k in range(0, 5):
 
 pv_data = pd.read_csv('PV Info\PvData.csv')
 pv_time_series = pd.Series(pv_data['PvPower'].values, index=pv_data.index)
-find_missing_values(pv_time_series, 4, float('inf'), 12, ['-', 'PvPower'])
+find_missing_values(pv_time_series, 4, float('inf'), 12, ['', 'PvPower'])
