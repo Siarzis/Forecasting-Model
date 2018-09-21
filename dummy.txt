@@ -1,1 +1,3 @@
-06/06/16  19   6.605180
+docker rm $(docker ps -a -q)
+docker rmi $(docker images -q)
+

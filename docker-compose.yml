@@ -1,0 +1,24 @@
+version: "3"
+services:
+  # a service called 'web'
+  web:
+    # replace username/repo:tag with your name and image details
+    image: andrewsyr/prediction:init
+    deploy:
+      # Run 5 instances of that image
+      replicas: 5
+      resources:
+        limits:
+          # limit, at most, 10% of the CPU (across all cores) and 50MB of RAM.
+          cpus: "0.1"
+          memory: 50M
+      restart_policy:
+        # Immediately restart containers if one fails
+        condition: on-failure
+    ports:
+      # Map port 4000 on the host to web’s port 80.
+      - "4000:80"
+    networks:
+      - webnet
+networks:
+  webnet:
