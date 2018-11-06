@@ -6,7 +6,7 @@ start_time = time.time()
 
 k = 0
 
-farm_data = pd.read_csv('Wind Info/WindFarm' + str(k+1) + '.csv')
+farm_data = pd.read_csv('Wind Info\WindFarm' + str(k+1) + '.csv')
 
 columns = ['Dates', 'SetPoints', 'WindSpeed', 'WindDirection']
 training_dataSet = pd.DataFrame(columns=columns)

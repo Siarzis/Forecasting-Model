@@ -84,13 +84,13 @@ def find_missing_values(input_series, gen_threshold, speed_threshold, pv_thresho
 
 
 for k in range(0, 5):
-    farm_data = pd.read_csv('Wind Info\WindFarm' + str(k+1) + '.csv')
+    farm_data = pd.read_csv('Wind Info/WindFarm' + str(k+1) + '.csv')
     direction_time_series = pd.Series(farm_data['WindDirection'].values, index=farm_data.index)
     find_missing_values(direction_time_series, 4, float('inf'), float('inf'), [k+1, 'WindDirection'], 0, 360)
     speed_time_series = pd.Series(farm_data['WindSpeed'].values, index=farm_data.index)
     find_missing_values(speed_time_series, 4, 10, float('inf'), [k+1, 'WindSpeed'], 0, 30)
 
 p_rated = int(input('Please, enter P_rated value: '))
-pv_data = pd.read_csv('PV Info\PvData.csv')
+pv_data = pd.read_csv('PV Info/PvData.csv')
 pv_time_series = pd.Series(pv_data['PvPower'].values, index=pv_data.index)
 find_missing_values(pv_time_series, 4, float('inf'), 12, ['', 'PvPower'], 0, p_rated)

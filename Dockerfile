@@ -1,20 +1,16 @@
 # Use an official Python runtime as a parent image
-FROM python:2.7-slim
+FROM python:3.6.6-alpine3.8
 
-# Set the working directory to /Prediction1
-WORKDIR /Prediction1
+WORKDIR /app
 
-# Copy the current directory contents into the container at /Prediction1
-COPY . /Prediction1
+COPY . /app
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --trusted-host pypi.python.org -r requirements.txt
+RUN apk --update add --no-cache g++
 
-# Make port 80 available to the world outside this container
-EXPOSE 80
+RUN pip install -r requirements.txt
 
-# Define environment variable
-ENV NAME Pred
+EXPOSE 70
 
-# Run SplitDatasets.py when the container launches
-CMD ["python", "SplitDatasets.py"]
+ENV NAME Pred2
+
+CMD ["python", "find_missing_values.py"]
