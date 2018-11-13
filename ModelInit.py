@@ -1,4 +1,5 @@
 from distutils.dir_util import copy_tree
+from pymongo import MongoClient
 
 import numpy as np
 import pandas as pd
@@ -60,7 +61,6 @@ class ForecastModel(object):
 
     def column_names(self):
         if self.type == 'pv':
-
             self.columns = ['power', 'power.0', 'hflux', 'evap', 'other']
             for s in range(self.coord.shape[0]):
                 self.columns.append('flux.' + str(s))
@@ -68,16 +68,13 @@ class ForecastModel(object):
             for s in range(self.coord.shape[0]):
                 self.columns.append('cloud.' + str(s))
             self.columns = ['temp', 'humid', 'hour', 'month', 'horizon']
-
         elif self.type == 'wind':
-
             self.columns = ['power']
             for s in range(self.coord.shape[0]):
                 self.columns.append('wind.' + str(s))
             for s in range(self.coord.shape[0]):
                 self.columns.append('direction.' + str(s))
             self.columns = ['temp', 'pressure', 'hour', 'month', 'horizon']
-
         elif self.type == 'load':
             self.columns = ['sp_day', 'hour', 'month'] + ['other.' + str(n) for n in range(75)]
         else:
@@ -96,12 +93,24 @@ class ForecastModel(object):
         except:
             raise IOError('Cannot find latslons.h5')
 
+    def store_model(self):
+        client = MongoClient('localhost', 27017)  # establish database connection
+
+        client.drop_database('nwp')
+        db = client.nwp  # access database
+
+        # TODO maybe 'coordinates' & 'column_names' functions will be used here
+        models = db.models
+        doc = {'latitude': self.lat_ind, 'longitude': self.long_ind, 'columns': self.columns}
+
+        models.insert_one(doc)
+
 
 p_nwp = 'C:/Users/User/WorkSpace/Docker-Network/h5_files'
 m_p = 'C:/Users/User/WorkSpace/Docker-Network/ModelPath'
 p_t = 'pv'
-c = pd.read_csv('coordinates.csv')
-r = pd.read_csv('rated.csv')
+c = pd.DataFrame(np.array([38, 28])[np.newaxis, :], columns=['latitude', 'longitude'])
+r = pd.DataFrame([100], columns=['rated'])
 t_s = 0.5
 t_a = 0.005
 n_c = 200
